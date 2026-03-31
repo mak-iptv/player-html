@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Radio Player</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin: 2rem; background: #f5f5f5; }
+        .player-container { background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; }
+        audio { width: 100%; margin: 1rem 0; }
+        h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .info { font-size: 0.9rem; color: #666; word-break: break-all; }
+        .error { color: red; margin-top: 1rem; }
+        button { background: #0088cc; color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 1rem; margin-top: 1rem; cursor: pointer; }
+        button:hover { background: #006699; }
+    </style>
+</head>
+<body>
+<div class="player-container">
+    <h1>🎧 Radio Player</h1>
+    <div id="stationName" class="info"></div>
+    <audio id="audio" controls autoplay></audio>
+    <div id="status" class="info">⏳ Duke ngarkuar...</div>
+    <button onclick="location.reload()">⟳ Ringarko</button>
+</div>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const streamUrl = urlParams.get('stream');
+    const name = urlParams.get('name') || 'Radio';
+
+    if (streamUrl) {
+        document.getElementById('stationName').innerText = name;
+        const audio = document.getElementById('audio');
+        audio.src = streamUrl;
+        audio.addEventListener('canplay', () => {
+            document.getElementById('status').innerHTML = '✅ Duke luajtur...';
+        });
+        audio.addEventListener('error', (e) => {
+            document.getElementById('status').innerHTML = '❌ Nuk mund të luhet. Kontrollo URL‑në.';
+            console.error(e);
+        });
+    } else {
+        document.getElementById('status').innerHTML = '❌ Mungon parametri "stream".';
+        document.getElementById('audio').style.display = 'none';
+    }
+</script>
+</body>
+</html>
