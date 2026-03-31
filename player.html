@@ -11,7 +11,7 @@
             box-sizing: border-box;
         }
         body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #0b2b3b 0%, #1b4f6e 100%);
             min-height: 100vh;
             display: flex;
@@ -19,6 +19,60 @@
             justify-content: center;
             padding: 1rem;
         }
+        /* Ekrani i parë – mbulesa me buton */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+        .overlay.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .start-card {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3);
+        }
+        .start-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #1f6e8c;
+        }
+        .start-card p {
+            margin-bottom: 1.5rem;
+            color: #4a627a;
+        }
+        .play-big-btn {
+            background: #1f6e8c;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 0.8rem 2rem;
+            border-radius: 60px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .play-big-btn:hover {
+            background: #0e5a74;
+            transform: scale(0.98);
+        }
+        /* Karta kryesore e player-it (fillimisht e fshehur) */
         .player-card {
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(2px);
@@ -26,9 +80,13 @@
             box-shadow: 0 20px 35px -10px rgba(0,0,0,0.3);
             max-width: 550px;
             width: 100%;
-            padding: 2rem 1.5rem 2rem 1.5rem;
-            transition: all 0.2s ease;
+            padding: 2rem 1.5rem;
             text-align: center;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .player-card.visible {
+            opacity: 1;
         }
         h1 {
             font-size: 2rem;
@@ -38,7 +96,6 @@
             -webkit-background-clip: text;
             color: transparent;
             margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
         }
         .station-name {
             font-size: 1.4rem;
@@ -50,14 +107,12 @@
             border-radius: 40px;
             margin: 0.8rem 0;
             word-break: break-word;
-            max-width: 100%;
         }
         .audio-wrapper {
             background: #f0f4f8;
             border-radius: 60px;
             padding: 0.8rem 1rem;
             margin: 1.2rem 0;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.02);
         }
         audio {
             width: 100%;
@@ -69,31 +124,11 @@
             margin: 0.8rem 0;
             padding: 0.5rem;
             border-radius: 50px;
-            background: #eef2f5;
-            color: #2c3e4e;
             display: inline-block;
             min-width: 160px;
         }
-        .status.loading { background: #fff3cd; color: #856404; }
         .status.playing { background: #d4edda; color: #155724; }
         .status.error { background: #f8d7da; color: #721c24; }
-        button {
-            background: #1f6e8c;
-            border: none;
-            color: white;
-            font-size: 1rem;
-            font-weight: 500;
-            padding: 0.7rem 1.8rem;
-            border-radius: 40px;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 0.5rem;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        button:hover {
-            background: #0e5a74;
-            transform: scale(0.98);
-        }
         .meta-info {
             margin-top: 1.5rem;
             font-size: 0.75rem;
@@ -109,141 +144,102 @@
     </style>
 </head>
 <body>
-<div class="player-card">
-    <h1>🎧 RADIO PLAYER</h1>
-    <div id="stationName" class="station-name">—</div>
-
-    <div class="audio-wrapper">
-        <audio id="audio" controls preload="auto"></audio>
+    <!-- Ekrani i parë (overlay) që kërkon klikim -->
+    <div id="overlay" class="overlay">
+        <div class="start-card">
+            <h2>🎧 Radio Player</h2>
+            <p>Kliko butonin për të filluar</p>
+            <button id="startBtn" class="play-big-btn">▶ Dëgjo Radio</button>
+        </div>
     </div>
 
-    <div id="status" class="status loading">⏳ Duke përgatitur...</div>
-    <button id="playBtn" style="display: none;">▶ Luaj manualisht</button>
-    <div class="meta-info">
-        📡 Transmetim live • Për cilësi më të mirë përdorni lidhje interneti të qëndrueshme
+    <!-- Player-i i vërtetë -->
+    <div id="playerCard" class="player-card">
+        <h1>RADIO PLAYER</h1>
+        <div id="stationName" class="station-name">—</div>
+        <div class="audio-wrapper">
+            <audio id="audio" controls preload="auto"></audio>
+        </div>
+        <div id="status" class="status">⏳ Duke përgatitur...</div>
+        <div class="meta-info">
+            📡 Transmetim live • Për cilësi më të mirë përdorni lidhje të qëndrueshme
+        </div>
     </div>
-</div>
 
-<script>
-    (function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        let streamUrl = urlParams.get('stream');
-        const stationName = urlParams.get('name') || 'Radio';
+    <script>
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let streamUrl = urlParams.get('stream');
+            const stationName = urlParams.get('name') || 'Radio';
 
-        const audioElem = document.getElementById('audio');
-        const stationSpan = document.getElementById('stationName');
-        const statusDiv = document.getElementById('status');
-        const playBtn = document.getElementById('playBtn');
+            const overlay = document.getElementById('overlay');
+            const playerCard = document.getElementById('playerCard');
+            const startBtn = document.getElementById('startBtn');
+            const audioElem = document.getElementById('audio');
+            const stationSpan = document.getElementById('stationName');
+            const statusDiv = document.getElementById('status');
 
-        if (!streamUrl) {
-            statusDiv.innerHTML = '❌ Parametri "stream" mungon.';
-            statusDiv.className = 'status error';
-            stationSpan.innerText = 'Gabim në lidhje';
-            return;
-        }
+            if (!streamUrl) {
+                statusDiv.innerHTML = '❌ Parametri "stream" mungon.';
+                statusDiv.className = 'status error';
+                stationSpan.innerText = 'Gabim në lidhje';
+                overlay.style.display = 'none';
+                playerCard.classList.add('visible');
+                return;
+            }
 
-        // Dekodimi i URL nëse është e koduar
-        try {
-            streamUrl = decodeURIComponent(streamUrl);
-        } catch(e) { /* nëse është e dëmtuar */ }
+            // Dekodimi i URL nëse është e koduar
+            try {
+                streamUrl = decodeURIComponent(streamUrl);
+            } catch(e) { /* nëse është e dëmtuar */ }
 
-        stationSpan.innerText = stationName;
+            stationSpan.innerText = stationName;
+            audioElem.src = streamUrl;
+            audioElem.load();
 
-        // Vendos stream URL
-        audioElem.src = streamUrl;
-        audioElem.load();
+            function setStatus(text, type) {
+                statusDiv.innerHTML = text;
+                statusDiv.className = `status ${type}`;
+            }
 
-        // Funksioni për të ndryshuar statusin dhe klasën
-        function setStatus(text, type) {
-            statusDiv.innerHTML = text;
-            statusDiv.className = `status ${type}`;
-        }
+            function startPlayback() {
+                // Fshih overlay-in dhe shfaq player-in
+                overlay.classList.add('hide');
+                playerCard.classList.add('visible');
 
-        // Për të trajtuar autoplay-in e bllokuar nga browser
-        let autoPlayAttempted = false;
-
-        const playPromise = audioElem.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                // Autoplay u lejua
-                setStatus('✅ Duke luajtur...', 'playing');
-                playBtn.style.display = 'none';
-            }).catch(err => {
-                console.warn('Autoplay u bllokua:', err);
-                setStatus('🔊 Autoplay i bllokuar. Kliko butonin për të dëgjuar.', 'error');
-                playBtn.style.display = 'inline-block';
-                autoPlayAttempted = true;
-            });
-        } else {
-            // Browser i vjetër, provo autoplay
-            audioElem.addEventListener('canplay', () => {
-                audioElem.play().catch(e => {
-                    setStatus('🔊 Kliko butonin për të dëgjuar.', 'error');
-                    playBtn.style.display = 'inline-block';
-                });
-            });
-        }
-
-        // Butoni për të luajtur manualisht
-        playBtn.addEventListener('click', () => {
-            audioElem.play().then(() => {
-                setStatus('✅ Duke luajtur...', 'playing');
-                playBtn.style.display = 'none';
-            }).catch(e => {
-                setStatus('❖ Nuk mund të luhet. Kontrollo lidhjen.', 'error');
-                console.error(e);
-            });
-        });
-
-        // Eventet e audios për status
-        audioElem.addEventListener('canplay', () => {
-            if (!autoPlayAttempted) {
-                // Nëse autoplay ishte i suksesshëm, statusi është tashmë 'playing'
-                if (audioElem.paused === false) {
+                // Tani luaj audio (kjo do të funksionojë sepse është pas klikimit)
+                audioElem.play().then(() => {
                     setStatus('✅ Duke luajtur...', 'playing');
-                } else {
-                    // Nëse është i ndalur, trego buton
-                    setStatus('🔊 Gati për luajtje. Kliko butonin.', 'error');
-                    playBtn.style.display = 'inline-block';
+                }).catch(err => {
+                    console.error('Gabim gjatë luajtjes:', err);
+                    setStatus('❌ Nuk mund të luhet. Kontrollo URL-në.', 'error');
+                });
+            }
+
+            // Kur përdoruesi klikon butonin e madh, fillon luajtja
+            startBtn.addEventListener('click', startPlayback);
+
+            // Eventet e audios për status (pasi të fillojë)
+            audioElem.addEventListener('playing', () => {
+                setStatus('✅ Duke luajtur...', 'playing');
+            });
+            audioElem.addEventListener('pause', () => {
+                if (audioElem.currentTime > 0 && !audioElem.ended) {
+                    setStatus('⏸ Pauzë', 'playing'); // nuk e konsideroj gabim
                 }
-            }
-        });
-
-        audioElem.addEventListener('playing', () => {
-            setStatus('✅ Duke luajtur...', 'playing');
-            playBtn.style.display = 'none';
-        });
-
-        audioElem.addEventListener('pause', () => {
-            if (audioElem.currentTime > 0 && !audioElem.ended) {
-                setStatus('⏸ Pauzë. Kliko butonin për të vazhduar.', 'error');
-                playBtn.style.display = 'inline-block';
-            }
-        });
-
-        audioElem.addEventListener('ended', () => {
-            setStatus('⏹ Transmetimi përfundoi. Ringarko për të rifilluar.', 'error');
-            playBtn.style.display = 'inline-block';
-        });
-
-        audioElem.addEventListener('error', (e) => {
-            console.error('Gabim audio:', e);
-            let errMsg = '❌ Nuk mund të luhet. Kontrollo URL-në.';
-            if (audioElem.networkState === 3) {
-                errMsg = '❌ Nuk u gjet burimi. URL e pasaktë ose server offline.';
-            }
-            setStatus(errMsg, 'error');
-            playBtn.style.display = 'inline-block';
-        });
-
-        // Nëse pas 5 sekondash nuk ka ngjarje "canplay", trego gabim
-        setTimeout(() => {
-            if (audioElem.readyState === 0 && !autoPlayAttempted) {
-                setStatus('⚠️ Serveri nuk përgjigjet. Kontrollo adresën.', 'error');
-                playBtn.style.display = 'inline-block';
-            }
-        }, 5000);
-    })();
-</script>
+            });
+            audioElem.addEventListener('ended', () => {
+                setStatus('⏹ Transmetimi përfundoi.', 'error');
+            });
+            audioElem.addEventListener('error', (e) => {
+                console.error('Gabim audio:', e);
+                let errMsg = '❌ Nuk mund të luhet. Kontrollo URL-në.';
+                if (audioElem.networkState === 3) {
+                    errMsg = '❌ Burimi nuk u gjet. URL e pasaktë ose server offline.';
+                }
+                setStatus(errMsg, 'error');
+            });
+        })();
+    </script>
 </body>
 </html>
