@@ -2,250 +2,250 @@
 <html lang="sq">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Radio Player | Autoplay + Marquee</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Radio Player</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0b2b3b 0%, #1b4f6e 100%);
-            min-height: 100vh;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: white;
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
-        }
-        .player-card {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(2px);
-            border-radius: 2rem;
-            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.3);
-            max-width: 550px;
-            width: 100%;
-            padding: 2rem 1.5rem;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-        h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(120deg, #1f6e8c, #0e2a38);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            margin-bottom: 0.5rem;
-        }
-        /* Marquee container */
-        .marquee-container {
-            background: #1f6e8c;
-            border-radius: 40px;
-            padding: 0.4rem 1rem;
-            margin: 0.8rem 0;
             overflow: hidden;
-            white-space: nowrap;
-        }
-        .marquee-text {
-            display: inline-block;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-            animation: marquee 12s linear infinite;
-        }
-        @keyframes marquee {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
-        /* Për pajisje që nuk e mbështesin animacionin, thjesht qendro */
-        @media (prefers-reduced-motion: reduce) {
-            .marquee-text { animation: none; white-space: normal; word-break: break-word; }
         }
 
-        .station-name {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #1f6e8c;
-            background: #eef7fc;
+        .player-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 3rem 2rem;
+            border-radius: 30px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .radio-icon {
+            font-size: 50px;
+            margin-bottom: 1rem;
             display: inline-block;
-            padding: 0.3rem 1rem;
-            border-radius: 40px;
-            margin: 0.5rem 0;
+            animation: pulse 2s infinite;
         }
-        .audio-wrapper {
-            background: #f0f4f8;
-            border-radius: 60px;
-            padding: 0.8rem 1rem;
-            margin: 1.2rem 0;
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
         }
-        audio {
-            width: 100%;
-            outline: none;
-            border-radius: 40px;
+
+        h1 {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
         }
-        .status {
+
+        /* Marquee Styles */
+        .track-info {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .artist-name {
+            font-weight: bold;
+            display: block;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+
+        .song-title {
+            color: var(--primary);
             font-size: 0.9rem;
-            margin: 0.8rem 0;
-            padding: 0.5rem;
-            border-radius: 50px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .marquee-wrapper {
+            white-space: nowrap;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .marquee-content {
             display: inline-block;
-            min-width: 160px;
+            padding-left: 100%;
+            animation: marquee 15s linear infinite;
         }
-        .status.playing { background: #d4edda; color: #155724; }
-        .status.error { background: #f8d7da; color: #721c24; }
-        .status.waiting { background: #fff3cd; color: #856404; }
-        button {
-            background: #1f6e8c;
+
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .play-btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
             border: none;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
             color: white;
-            font-size: 1rem;
-            font-weight: 500;
-            padding: 0.6rem 1.5rem;
-            border-radius: 40px;
+            font-size: 1.5rem;
             cursor: pointer;
-            margin-top: 0.5rem;
-            transition: 0.2s;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.3);
         }
-        button:hover {
-            background: #0e5a74;
-            transform: scale(0.98);
+
+        .play-btn:hover { transform: scale(1.1); }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
         }
-        .meta-info {
-            margin-top: 1.5rem;
-            font-size: 0.75rem;
-            color: #6c86a3;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 1rem;
+
+        /* Volume Slider */
+        .volume-container {
+            width: 100%;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        @media (max-width: 500px) {
-            .player-card { padding: 1.5rem; }
-            h1 { font-size: 1.7rem; }
-            .marquee-text { font-size: 1rem; }
+
+        input[type=range] {
+            flex-grow: 1;
+            accent-color: var(--primary);
         }
     </style>
 </head>
 <body>
+
 <div class="player-card">
-    <h1>🎧 RADIO PLAYER</h1>
+    <div class="radio-icon">📻</div>
+    <h1 id="stationNameDisplay">Radio Live</h1>
 
-    <!-- Marquee që tregon emrin e stacionit -->
-    <div class="marquee-container">
-        <div class="marquee-text" id="marqueeText">🎵 Radio</div>
+    <div class="track-info">
+        <div class="marquee-wrapper">
+            <div class="marquee-content">
+                <span class="artist-name" id="artist">Duke u lidhur...</span>
+                <span class="song-title" id="songTitle">Ju lutem prisni</span>
+            </div>
+        </div>
     </div>
 
-    <div class="audio-wrapper">
-        <audio id="audio" controls preload="auto"></audio>
+    <div class="controls">
+        <button class="play-btn" id="playBtn">▶</button>
+        <div id="status" class="status-badge">Gati për transmetim</div>
+        
+        <div class="volume-container">
+            <span>🔈</span>
+            <input type="range" id="volume" min="0" max="1" step="0.1" value="1">
+            <span>🔊</span>
+        </div>
     </div>
 
-    <div id="status" class="status waiting">⏳ Duke nisur...</div>
-    <button id="playBtn" style="display: none;">▶ Luaj manualisht</button>
-    <div class="meta-info">
-        📡 Transmetim live • Nëse nuk fillon, kliko butonin më lart.
-    </div>
+    <audio id="radioAudio" preload="auto"></audio>
 </div>
 
 <script>
-    (function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        let streamUrl = urlParams.get('stream');
-        const stationName = urlParams.get('name') || 'Radio';
+    const audio = document.getElementById('radioAudio');
+    const playBtn = document.getElementById('playBtn');
+    const status = document.getElementById('status');
+    const artistDisplay = document.getElementById('artist');
+    const songDisplay = document.getElementById('songTitle');
+    const volumeSlider = document.getElementById('volume');
 
-        const audioElem = document.getElementById('audio');
-        const marqueeSpan = document.getElementById('marqueeText');
-        const statusDiv = document.getElementById('status');
-        const playBtn = document.getElementById('playBtn');
+    // Merr parametrat nga URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const streamUrl = urlParams.get('stream');
+    const name = urlParams.get('name') || 'Radio Online';
 
-        if (!streamUrl) {
-            statusDiv.innerHTML = '❌ Parametri "stream" mungon.';
-            statusDiv.className = 'status error';
-            marqueeSpan.innerText = 'Gabim në lidhje';
-            return;
-        }
+    document.getElementById('stationNameDisplay').innerText = name;
 
-        // Dekodimi i URL nëse është e koduar
-        try {
-            streamUrl = decodeURIComponent(streamUrl);
-        } catch(e) { /* nëse është e dëmtuar */ }
+    if (streamUrl) {
+        audio.src = streamUrl;
+    } else {
+        status.innerText = "Mungon URL e stream-it!";
+    }
 
-        // Vendos emrin në marquee
-        marqueeSpan.innerText = `🎵 ${stationName}  •  🎵 ${stationName}  •  🎵 ${stationName}`; // përsëritet për marquee më të gjatë
-
-        // Vendos stream URL
-        audioElem.src = streamUrl;
-        audioElem.load();
-
-        function setStatus(text, type) {
-            statusDiv.innerHTML = text;
-            statusDiv.className = `status ${type}`;
-        }
-
-        // Përpiqemi të luajmë automatikisht
-        const playPromise = audioElem.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                setStatus('✅ Duke luajtur...', 'playing');
-                playBtn.style.display = 'none';
+    // Funksioni për Play/Pause
+    function togglePlay() {
+        if (audio.paused) {
+            audio.play().then(() => {
+                playBtn.innerText = "⏸";
+                status.innerText = "LIVE NOW";
+                status.style.color = "#00ff88";
             }).catch(err => {
-                console.warn('Autoplay i bllokuar:', err);
-                setStatus('🔊 Autoplay i bllokuar. Kliko butonin për të dëgjuar.', 'error');
-                playBtn.style.display = 'inline-block';
+                console.log("Autoplay i bllokuar, kërkohet klikim.");
             });
         } else {
-            // Browser i vjetër, provo event
-            audioElem.addEventListener('canplay', () => {
-                audioElem.play().catch(e => {
-                    setStatus('🔊 Kliko butonin për të dëgjuar.', 'error');
-                    playBtn.style.display = 'inline-block';
-                });
-            });
+            audio.pause();
+            playBtn.innerText = "▶";
+            status.innerText = "PAUSE";
+            status.style.color = "white";
         }
+    }
 
-        // Butoni manual
-        playBtn.addEventListener('click', () => {
-            audioElem.play().then(() => {
-                setStatus('✅ Duke luajtur...', 'playing');
-                playBtn.style.display = 'none';
-            }).catch(e => {
-                setStatus('❌ Nuk mund të luhet. Kontrollo lidhjen.', 'error');
-                console.error(e);
-            });
-        });
+    playBtn.addEventListener('click', togglePlay);
 
-        // Evente për status
-        audioElem.addEventListener('playing', () => {
-            setStatus('✅ Duke luajtur...', 'playing');
-            playBtn.style.display = 'none';
-        });
-        audioElem.addEventListener('pause', () => {
-            if (audioElem.currentTime > 0 && !audioElem.ended) {
-                setStatus('⏸ Pauzë', 'waiting');
-                playBtn.style.display = 'inline-block';
-            }
-        });
-        audioElem.addEventListener('ended', () => {
-            setStatus('⏹ Transmetimi përfundoi.', 'error');
-            playBtn.style.display = 'inline-block';
-        });
-        audioElem.addEventListener('error', (e) => {
-            console.error('Gabim audio:', e);
-            let errMsg = '❌ Nuk mund të luhet. Kontrollo URL-në.';
-            if (audioElem.networkState === 3) {
-                errMsg = '❌ Burimi nuk u gjet. URL e pasaktë ose server offline.';
-            }
-            setStatus(errMsg, 'error');
-            playBtn.style.display = 'inline-block';
-        });
+    // Provon autoplay sapo faqja ngarkohet (shpesh bllokohet nga browseri)
+    window.addEventListener('load', () => {
+        togglePlay();
+        // Nëse bllokohet, përdoruesi do klikojë butonin
+    });
 
-        // Nëse pas 5 sekondash nuk ka ngjarje "canplay", trego buton
-        setTimeout(() => {
-            if (audioElem.readyState === 0 && playBtn.style.display === 'none') {
-                setStatus('⚠️ Serveri nuk përgjigjet. Kliko butonin.', 'error');
-                playBtn.style.display = 'inline-block';
-            }
-        }, 5000);
-    })();
+    // Kontrolli i volumit
+    volumeSlider.addEventListener('input', (e) => {
+        audio.volume = e.target.value;
+    });
+
+    // Simulimi i marrjes së titullit të këngës
+    // (Për transmetime reale, kjo kërkon një API nga serveri i radios)
+    function updateMetadata() {
+        // Këtu mund të vendosni një Fetch API nëse radioja juaj e ofron
+        // Për momentin po e lëmë statike ose me emrin e radios
+        artistDisplay.innerText = name;
+        songDisplay.innerText = "Duke transmetuar live...";
+    }
+
+    updateMetadata();
+
+    // Eventet e audios
+    audio.onwaiting = () => status.innerText = "Duke u ngarkuar...";
+    audio.onplaying = () => status.innerText = "LIVE NOW";
+    audio.onerror = () => {
+        status.innerText = "Gabim në lidhje!";
+        status.style.color = "#ff4444";
+    };
 </script>
+
 </body>
 </html>
