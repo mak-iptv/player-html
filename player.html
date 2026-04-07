@@ -29,7 +29,7 @@
             background: var(--card-bg);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 3rem 2rem;
+            padding: 2rem 1.5rem;
             border-radius: 30px;
             width: 90%;
             max-width: 450px;
@@ -56,46 +56,54 @@
             text-transform: uppercase;
             color: var(--primary);
             margin-bottom: 1.5rem;
+            word-break: break-word;
         }
 
-        /* Marquee Rregulluar */
+        /* Marquee i pafund pa boshllëk */
         .track-info-container {
             background: rgba(0, 0, 0, 0.4);
             border-radius: 15px;
-            padding: 20px;
+            padding: 20px 0;
             margin-bottom: 2rem;
-            overflow: hidden; /* Ky rregull fsheh tekstin që del jashtë */
+            overflow: hidden;
             position: relative;
             height: 80px;
             display: flex;
             align-items: center;
         }
 
-        .marquee-content {
+        .marquee-wrapper {
             white-space: nowrap;
-            position: absolute;
-            will-change: transform;
-            animation: marquee 12s linear infinite;
-            padding-left: 100%; /* Fillon nga jashtë djathtas */
+            display: inline-block;
+            animation: marquee 20s linear infinite;
+            padding-left: 0;
+        }
+
+        .marquee-content {
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .marquee-content span {
+            display: inline-block;
+            margin-right: 40px;
         }
 
         @keyframes marquee {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
+            100% { transform: translateX(-50%); }
         }
 
         .artist-name {
             font-weight: bold;
             color: #fff;
             font-size: 1.2rem;
-            display: block;
         }
 
         .song-title {
             color: var(--primary);
             font-size: 1rem;
-            display: block;
-            margin-top: 5px;
+            margin-left: 12px;
         }
 
         /* Controls */
@@ -135,7 +143,7 @@
 
         .volume-container {
             width: 100%;
-            margin-top: 20px;
+            margin-top: 10px;
             display: flex;
             align-items: center;
             gap: 15px;
@@ -146,6 +154,12 @@
             accent-color: var(--primary);
             cursor: pointer;
         }
+
+        .meta-note {
+            font-size: 0.7rem;
+            margin-top: 15px;
+            opacity: 0.6;
+        }
     </style>
 </head>
 <body>
@@ -155,9 +169,11 @@
     <h1 id="stationNameDisplay">Radio Live</h1>
 
     <div class="track-info-container">
-        <div class="marquee-content" id="marqueeBox">
-            <span class="artist-name" id="artist">Artist i Panjohur</span>
-            <span class="song-title" id="songTitle">Duke u lidhur me serverin...</span>
+        <div class="marquee-wrapper" id="marqueeWrapper">
+            <div class="marquee-content" id="marqueeContent">
+                <span><span class="artist-name" id="artist">Artist</span><span class="song-title" id="songTitle">Titulli</span></span>
+                <span><span class="artist-name" id="artist2">Artist</span><span class="song-title" id="songTitle2">Titulli</span></span>
+            </div>
         </div>
     </div>
 
@@ -167,84 +183,177 @@
         
         <div class="volume-container">
             <span>🔈</span>
-            <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
+            <input type="range" id="volume" min="0" max="1" step="0.05" value="0.7">
             <span>🔊</span>
         </div>
     </div>
-
+    <div class="meta-note" id="metaNote">🎵 Metadata përditësohet çdo 15 sekonda</div>
     <audio id="radioAudio" crossorigin="anonymous"></audio>
 </div>
 
 <script>
     const audio = document.getElementById('radioAudio');
     const playBtn = document.getElementById('playBtn');
-    const status = document.getElementById('status');
-    const artistDisplay = document.getElementById('artist');
-    const songDisplay = document.getElementById('songTitle');
+    const statusDiv = document.getElementById('status');
     const volumeSlider = document.getElementById('volume');
 
-    // Merr parametrat nga URL
+    // Elementet e marquee (dy kopje)
+    const artistSpan = document.getElementById('artist');
+    const titleSpan = document.getElementById('songTitle');
+    const artistSpan2 = document.getElementById('artist2');
+    const titleSpan2 = document.getElementById('songTitle2');
+
+    // Lexo parametrat nga URL
     const urlParams = new URLSearchParams(window.location.search);
     const streamUrl = urlParams.get('stream');
-    const name = urlParams.get('name') || 'Radio Online';
+    const stationName = urlParams.get('name') || 'Radio Online';
+    const metaApiUrl = urlParams.get('metaUrl');
+    const staticArtist = urlParams.get('artist');
+    const staticTitle = urlParams.get('title');
 
-    document.getElementById('stationNameDisplay').innerText = name;
+    document.getElementById('stationNameDisplay').innerText = stationName;
 
-    if (streamUrl) {
-        audio.src = streamUrl;
+    // Nëse nuk ka stream, trego gabim
+    if (!streamUrl) {
+        statusDiv.innerText = "Mungon URL!";
+        statusDiv.style.color = "#ff8888";
+        document.getElementById('metaNote').innerText = "❌ Shto ?stream=URL_RADIOS ne URL";
+        updateMetadataDisplay("Gabim", "Vendos stream URL");
     } else {
-        status.innerText = "Mungon URL!";
-        songDisplay.innerText = "Vendosni ?stream=URL_JUAJ ne fund";
+        audio.src = streamUrl;
+        startMetadataFetching();
     }
 
+    // Funksion për të përditësuar pamjen e marquee (të dy kopjet)
+    function updateMetadataDisplay(artist, title) {
+        const cleanArtist = artist?.trim() || stationName;
+        const cleanTitle = title?.trim() || "Duke luajtur...";
+        artistSpan.innerText = cleanArtist;
+        titleSpan.innerText = cleanTitle;
+        artistSpan2.innerText = cleanArtist;
+        titleSpan2.innerText = cleanTitle;
+    }
+
+    // Marrja e metadata-s
+    async function fetchMetadata() {
+        if (!streamUrl) return;
+
+        // 1. Nëse ka metaUrl (API e jashtme)
+        if (metaApiUrl) {
+            try {
+                const response = await fetch(metaApiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    const artist = data.artist || data.Artist || data.interpret || "Artist";
+                    const title = data.title || data.Title || data.song || "Këngë";
+                    updateMetadataDisplay(artist, title);
+                    return;
+                }
+            } catch(e) { console.warn("Meta API error", e); }
+        }
+
+        // 2. Nëse janë dhënë static parametrat artist&title
+        if (staticArtist && staticTitle) {
+            updateMetadataDisplay(staticArtist, staticTitle);
+            return;
+        }
+
+        // 3. Përpjekje për të marrë metadata nga Icecast / SHOUTcast në mënyrë automatike
+        try {
+            let baseUrl = streamUrl;
+            // Heq parametrat e mundshëm
+            if (baseUrl.includes('?')) baseUrl = baseUrl.split('?')[0];
+            
+            // Provon për Icecast (status-json.xsl)
+            let icecastUrl = baseUrl.replace(/\/[^/]*\.(mp3|ogg|aac|m3u|pls)$/i, '/status-json.xsl');
+            if (icecastUrl === baseUrl && !baseUrl.endsWith('.xsl')) icecastUrl = baseUrl + '/status-json.xsl';
+            
+            const resp = await fetch(icecastUrl, { cache: 'no-store' });
+            if (resp.ok) {
+                const text = await resp.text();
+                // Kërkon icecast format
+                const match = text.match(/"artist"\s*:\s*"([^"]+)"/i);
+                const matchTitle = text.match(/"title"\s*:\s*"([^"]+)"/i);
+                if (match && matchTitle) {
+                    updateMetadataDisplay(match[1], matchTitle[1]);
+                    return;
+                }
+            }
+        } catch(e) { /* nëse dështon, vazhdo */ }
+
+        // 4. Provon për SHOUTcast 7.html
+        try {
+            let scUrl = streamUrl;
+            if (scUrl.includes(';')) scUrl = scUrl.split(';')[0];
+            scUrl = scUrl.replace(/\/[^/]*\.(mp3|pls|m3u)$/i, '/7.html');
+            if (!scUrl.endsWith('/7.html')) scUrl = scUrl + '/7.html';
+            
+            const resp = await fetch(scUrl, { cache: 'no-store' });
+            if (resp.ok) {
+                const html = await resp.text();
+                // Formati tipik: <body>123,1,2,3,Artisti - Titulli</body>
+                const match = html.match(/<body>.*?,\s*([^<]+)<\/body>/i);
+                if (match && match[1]) {
+                    let parts = match[1].split(' - ');
+                    if (parts.length === 1) parts = match[1].split(' – ');
+                    let artist = parts.length > 1 ? parts[0] : stationName;
+                    let title = parts.length > 1 ? parts[1] : parts[0];
+                    updateMetadataDisplay(artist, title);
+                    return;
+                }
+            }
+        } catch(e) {}
+
+        // Nëse asnjë metodë nuk funksionoi, trego emrin e radios
+        updateMetadataDisplay(stationName, "🎵 Pa metadata");
+        document.getElementById('metaNote').innerHTML = "ℹ️ Për metadata, shto &metaUrl=API ose &artist=...&title=...";
+    }
+
+    function startMetadataFetching() {
+        fetchMetadata();
+        setInterval(fetchMetadata, 15000);
+    }
+
+    // Kontrollet e audios
     function togglePlay() {
         if (audio.paused) {
             audio.play().then(() => {
                 playBtn.innerText = "⏸";
-                status.innerText = "LIVE NOW";
-                status.style.color = "#00ff88";
+                statusDiv.innerText = "LIVE NOW";
+                statusDiv.style.color = "#00ff88";
             }).catch(err => {
-                status.innerText = "Klikoni Play";
+                statusDiv.innerText = "Kliko manualisht";
+                statusDiv.style.color = "#ffaa00";
+                console.warn("Autoplay i bllokuar:", err);
             });
         } else {
             audio.pause();
             playBtn.innerText = "▶";
-            status.innerText = "PAUSE";
-            status.style.color = "white";
+            statusDiv.innerText = "PAUSE";
+            statusDiv.style.color = "white";
         }
     }
 
     playBtn.addEventListener('click', togglePlay);
-
-    // Kontrolli i volumit
     volumeSlider.addEventListener('input', (e) => {
         audio.volume = e.target.value;
     });
 
-    // Funksioni për të marrë Metadata (Artistin dhe Titullin)
-    // SHËNIM: Shumica e serverave kërkojnë CORS të lejuar.
-    function fetchMetadata() {
-        // Nëse nuk kemi API, tregojmë emrin e radios si artist
-        // Mund të shtoni këtu linkun e API-së së radios suaj
-        if(!streamUrl) return;
-
-        // Simulim ose vendosje statike nese serveri nuk jep meta-data direkt
-        // artistDisplay.innerText = "Emri Artistit"; 
-        // songDisplay.innerText = "Titulli i Kenges";
-    }
-
-    // Refresh metadata cdo 15 sekonda
-    setInterval(fetchMetadata, 15000);
-    fetchMetadata();
-
     // Eventet e audios
-    audio.onwaiting = () => status.innerText = "Duke u ngarkuar...";
-    audio.onplaying = () => status.innerText = "LIVE NOW";
+    audio.onwaiting = () => { statusDiv.innerText = "Buffer..."; statusDiv.style.color = "#ffaa00"; };
+    audio.onplaying = () => { statusDiv.innerText = "LIVE NOW"; statusDiv.style.color = "#00ff88"; };
     audio.onerror = () => {
-        status.innerText = "Gabim ne transmetim!";
-        status.style.color = "#ff4444";
+        statusDiv.innerText = "Gabim në transmetim!";
+        statusDiv.style.color = "#ff4444";
+        updateMetadataDisplay(stationName, "❌ Kontrollo URL-në e stream-it");
     };
+    
+    // Nëse stream-i ka metadata ICY, mund të përdoret audio.onloadedmetadata, por jo të gjithë e dërgojnë
+    if ('mediaSession' in navigator) {
+        audio.addEventListener('loadedmetadata', () => {
+            // Disa radio e dërgojnë titullin në metadata të stream-it
+        });
+    }
 </script>
-
 </body>
 </html>
